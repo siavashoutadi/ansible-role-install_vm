@@ -1,0 +1,45 @@
+---
+
+- name: Ensure SSH key for ansible is available
+  local_action:
+    module: shell ssh-keygen -t rsa -f "{{ lookup('env','HOME') }}/.ssh/id_rsa_ansible" -N ''
+    args:
+      creates: "{{ lookup('env','HOME') }}/.ssh/id_rsa_ansible"
+
+- name: Save SSH public key to be used in kickstart file
+  local_action:
+    module: shell cat "{{ lookup('env','HOME') }}/.ssh/id_rsa_ansible.pub"
+  register: install_vm_ssh_public_key
+
+- name: create temporary directory
+  local_action:
+    module: tempfile
+    state: directory
+    suffix: create_os
+  register: tmp
+
+- name: Copy kickstart
+  local_action:
+    module: template
+    src: "{{ install_vm_ks_file }}"
+    dest: "{{tmp.path}}/ks.cfg"
+
+- name: Install the VM
+  local_action:
+    module: virt_install
+    name: "{{ install_vm_name }}"
+    vcpus: "{{ install_vm_vcpu }}"
+    memory: "{{ install_vm_memory }}"
+    disk_size: "{{ install_vm_disk_size }}"
+    disk_path: "{{ install_vm_disk_path }}/{{ install_vm_name }}.qcow2"
+    location: "{{ install_vm_os_url }}"
+    ks_file: "{{tmp.path}}/ks.cfg"
+    network: "{{ install_vm_network }}"
+    bridge: "{{ install_vm_brigde }}"
+    use_bridge: "{{ install_vm_use_bridge }}"
+    recreate: "{{ install_vm_recreate }}"
+
+- name: Wait for Virtual machine to come up
+  wait_for_connection:
+    delay: 30
+    timeout: 120

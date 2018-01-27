@@ -1,0 +1,27 @@
+---
+
+install_vm_os_url: http://mirror.nsc.liu.se/CentOS/7.4.1708/os/x86_64/
+install_vm_root_password: password
+install_vm_root_disk_size: 70
+
+install_vm_ip: 192.168.122.30
+install_vm_netmask: 255.255.255.0
+install_vm_gateway: 192.168.122.1
+install_vm_name_server: 192.168.122.1
+install_vm_hostname: localhost
+
+install_vm_name: vm
+install_vm_vcpu: 1
+install_vm_memory: 2048
+install_vm_disk_size: 16
+install_vm_disk_path: ~/vm_images/{{ install_vm_name }}.qcow2
+install_vm_disk_format: qcow2
+install_vm_graphics: spice
+install_vm_os_type: linux
+install_vm_os_variant: centos7.0
+install_vm_virt_type: kvm
+install_vm_ks_file: centos7_ks.cfg.j2
+install_vm_network: default
+install_vm_brigde: virbr0
+install_vm_use_bridge: False
+install_vm_recreate: False

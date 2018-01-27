@@ -1,0 +1,63 @@
+#version=DEVEL
+# System authorization information
+auth --enableshadow --passalgo=sha512
+# Use network installation
+url --url="{{ install_vm_os_url }}"
+# poweroff in installation completion
+poweroff
+# Run the Setup Agent on first boot
+firstboot --enable
+ignoredisk --only-use=vda
+# Keyboard layouts
+keyboard --vckeymap=us --xlayouts='us'
+# System language
+lang en_US.UTF-8
+
+# Network information
+network --bootproto=static --ip={{ install_vm_ip }} --netmask={{ install_vm_netmask }} --gateway={{ install_vm_gateway }} --nameserver={{ install_vm_name_server }} --activate
+network  --hostname={{ install_vm_hostname }}
+
+# Root password
+rootpw {{ install_vm_root_password }}
+# System services
+services --enabled="chronyd"
+# System timezone
+timezone Europe/Stockholm --isUtc
+# System bootloader configuration
+bootloader --append=" crashkernel=auto" --location=mbr --boot-drive=vda
+# Partition clearing information
+clearpart --none --initlabel
+# Disk partitioning information
+part pv.146 --fstype="lvmpv" --ondisk=vda --size 1 --grow
+part /boot --fstype="xfs" --ondisk=vda --size=1024
+volgroup centos --pesize=4096 pv.146
+logvol /  --fstype="xfs" --percent={{ install_vm_root_disk_size }} --name=root --vgname=centos
+logvol swap  --fstype="swap" --size=4000 --name=swap --vgname=centos
+
+%packages
+@^minimal
+@core
+chrony
+kexec-tools
+
+%end
+
+%post
+mkdir -m0700 /root/.ssh/
+cat <<EOF >/root/.ssh/authorized_keys
+{{ install_vm_ssh_public_key.stdout }}
+EOF
+chmod 0600 /root/.ssh/authorized_keys
+restorecon -R /root/.ssh/
+
+%end
+
+%addon com_redhat_kdump --enable --reserve-mb='auto'
+
+%end
+
+%anaconda
+pwpolicy root --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+pwpolicy user --minlen=6 --minquality=1 --notstrict --nochanges --emptyok
+pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+%end
